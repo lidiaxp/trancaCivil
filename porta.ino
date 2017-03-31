@@ -15,8 +15,12 @@ IPAddress subnet(255, 255, 255, 0);
 MFRC522 mfrc522(SS_PIN, RST_PIN);  
 
 int portaRele = 7;
+int portaBotao = 23; //precisa de um resistor de 10k, a maioria
+int buzzer = 24;
 
 int estadoRele = 1;
+int estadiBotao = 0;
+
 int leituraRele = 0;
 String cartao;
 String chaveiro;
@@ -40,6 +44,8 @@ byte pinosColunas[COLUNAS] = {18, 19, 20};
 Keypad meuteclado = Keypad( makeKeymap(matriz_teclas), pinosLinhas, 
                             pinosColunas, LINHAS, COLUNAS); 
 
+EthernetServer server(80); //porta que vai rodar o servidor
+
 /*
  * Nos loops abre e fecha porta pode ser ao contrario
  * preciso testar com o rele para descbrir
@@ -54,19 +60,30 @@ Keypad meuteclado = Keypad( makeKeymap(matriz_teclas), pinosLinhas,
 
 void setup() {
   Serial.begin(9600);   
+  
   SPI.begin();      
   mfrc522.PCD_Init();
+  
   pinMode(porta_rele, OUTPUT); 
+  pinMode(buzzer, OUTPUT);
+  pinMode(portaBotao, INPUT);
+    
   digitalWrite(portaRele, HIGH);
+  
+  Ethernet.begin(mac, ip, gateway, subnet);
+  server.begin();
 }
 
 void loop() {
-    lerRFID();
-    cadastroCartao();
-    cadastroChaveiro();
-    checarRFID();
-    inserirDigito();
-    checarSenha();
+    estadoBotao = digitalRead(portaBotao);
+    if(estadoBotao){
+      lerRFID();
+      cadastroCartao();
+      cadastroChaveiro();
+      checarRFID();
+      inserirDigito();
+      checarSenha();
+    } else{ fechaPorta();}
 }
 
 void inserirDigito(){
@@ -112,10 +129,9 @@ void abrePorta(){
 void fechaPorta(){
   digitalWrite(portaRele, LOW);
   Serial.println("Acesso Negado");
-  /*
-   * seria bom colocar algum tipo de led ou buzzer para sinalizar
-   * que o acesso não foi bem sucedido
-   */
+  digitalWrite(buzzer, HIGH);
+  delay(300);
+  digitalWrite(buzzer, LOW);
 }
 
 void cadastroCartao(){
