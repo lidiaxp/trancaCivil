@@ -26,6 +26,9 @@ String cartao;
 String chaveiro;
 int count;
 int senha[4];
+String readString;
+
+boolean estadoPorta = false; // true = aberta, false = fechada
 
 char matriz_teclas[LINHAS][COLUNAS] = 
 {
@@ -53,6 +56,10 @@ EthernetServer server(80); //porta que vai rodar o servidor
  * O código ta todo como debug ainda
  */
 
+/*
+ * instruções para o site: https://br.renatocandido.org/2013/09/acendendo-um-led-via-internet-com-arduino-e-o-ethernet-shield/
+ */
+
  /*
   * Esse é um programa especificamente para dusa tags
   * se for espandir precisa alterar o código
@@ -75,6 +82,7 @@ void setup() {
 }
 
 void loop() {
+    site();
     estadoBotao = digitalRead(portaBotao);
     if(estadoBotao){
       lerRFID();
@@ -84,6 +92,56 @@ void loop() {
       inserirDigito();
       checarSenha();
     } else{ fechaPorta();}
+}
+
+void site(){
+  EthernetClient client = server.available();
+  if (client) {
+    if (client) {
+    while (client.connected()) {
+      if (client.available()) {
+        char c = client.read();
+  
+        if (readString.length() < 100) {
+          readString += c;             
+        }
+ 
+        if (c == '\n') {
+          client.println("HTTP/1.1 200 OK");
+          client.println("Content-Type: text/html");
+          client.println("Connection: close");
+          client.println("Refresh: 5"); //Recarrega a pagina a cada 2seg
+          client.println();
+          client.println("<!DOCTYPE HTML>");
+          client.println("<html><head></head><body>");
+          client.println("<table align='center'><tr>");
+          client.println("<a href=\"/?portaon\">Abrir porta</a><br/>");
+          client.println("</tr><tr>");
+          client.println("<a href=\"/?portaoff\">Fechar porta</a>");
+          client.println("</tr></table>");
+          if(estadoPorta){
+            client.println("<p>Porta aberta</p>");
+          } else {
+            client.println("<p>Porta fechada</p>");
+          }
+          client.println("</body></html>");
+           
+          delay(1);
+          client.stop();
+           
+          if(readString.indexOf("?portaon") > 0) {
+            abrePorta();
+          }
+          else {
+            if(readString.indexOf("?portaoff") > 0) {
+              fechaPorta();
+            }
+          }
+          readString="";    
+        }
+      }
+    }
+  
 }
 
 void inserirDigito(){
@@ -124,11 +182,13 @@ void putSenha(int n){
 void abrePorta(){
   digitalWrite(portaRele, HIGH);
   Serial.println("Acesso liberado");
+  estadoPorta = true;
 }
 
 void fechaPorta(){
   digitalWrite(portaRele, LOW);
   Serial.println("Acesso Negado");
+  estadoPorta = false;
   digitalWrite(buzzer, HIGH);
   delay(300);
   digitalWrite(buzzer, LOW);
