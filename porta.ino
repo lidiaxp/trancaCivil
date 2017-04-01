@@ -58,6 +58,7 @@ EthernetServer server(80); //porta que vai rodar o servidor
 
 /*
  * instruções para o site: https://br.renatocandido.org/2013/09/acendendo-um-led-via-internet-com-arduino-e-o-ethernet-shield/
+ * site legal para DB em arduino: http://cleitonbueno.com/arduino-sensor-de-temperatura-parte5/ 
  */
 
  /*
