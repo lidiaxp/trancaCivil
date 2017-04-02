@@ -24,6 +24,7 @@ int estadiBotao = 0;
 int leituraRele = 0;
 String cartao;
 String chaveiro;
+String informacao;
 int count;
 int senha[4];
 String readString;
@@ -54,11 +55,6 @@ EthernetServer server(80); //porta que vai rodar o servidor
  * preciso testar com o rele para descbrir
  * 
  * O código ta todo como debug ainda
- */
-
-/*
- * instruções para o site: https://br.renatocandido.org/2013/09/acendendo-um-led-via-internet-com-arduino-e-o-ethernet-shield/
- * site legal para DB em arduino: http://cleitonbueno.com/arduino-sensor-de-temperatura-parte5/ 
  */
 
  /*
@@ -142,7 +138,8 @@ void site(){
         }
       }
     }
-  
+   }
+  }
 }
 
 void inserirDigito(){
@@ -165,25 +162,55 @@ void checarSenha(){
 
 void putSenha(int n){
   if(count == 0){
-        senha[count] = n;
+     senha[count] = n;
+  }
+  if(count == 1){
+     senha[count] = n;
+  }
+  if(count == 2){
+     senha[count] = n;
+  }
+  if(count == 3){
+     senha[count] = n;
+  }
+  delay(500); 
+  count++;
+}
+
+void gerarLog(){
+  /*
+   * CREATE DATABASE log;
+   * USE log;
+   * CREATE TABLE entrada(usuario VARCHAR(30), PRIMARY KEY(usuario));
+   * 
+   * INSERT INTO 'entrada' ('usuario') VALUES ('chaveiro');
+   * 
+   * http://www.arduinoecia.com.br/2015/11/acessar-internet-arduino-gsm-shield-sim-900.html
+   * método não funciona ainda   
+   */
+  EthernetClient client = server.available();
+  if (client) {
+    if (client) {
+    while (client.connected()) {
+      if (client.available()) {
+          client.println("POST /usuario HTTP/1.1"); //caminho do bd
+          client.println("Host: localhost");      // host do bd
+          client.println("Content-Type: application/json");
+          client.print("Content-Length: ");
+          client.println(informacao.length());
+          client.println();
+          client.println(informacao);    
+        }
       }
-      if(count == 1){
-        senha[count] = n;
-      }
-      if(count == 2){
-        senha[count] = n;
-      }
-      if(count == 3){
-        senha[count] = n;
-      }
-     delay(500); 
-     count++;
+    }
+  }
 }
 
 void abrePorta(){
   digitalWrite(portaRele, HIGH);
   Serial.println("Acesso liberado");
   estadoPorta = true;
+  gerarLog();
 }
 
 void fechaPorta(){
@@ -220,10 +247,16 @@ void cadastroChaveiro(){
 }
 
 void checarRFID(){
-  if (cartao.substring(1) == "UID que aparecer no cartao" | chaveiro.substring(1) == "UID que aparecer no chaveiro") {
+  if (cartao.substring(1) == "UID que aparecer no cartao") {
+    informacao = "";
+    informacao += "Usuário com cartao entrou";
     abrePorta();
+  } else if(chaveiro.substring(1) == "UID que aparecer no chaveiro"){
+     informacao = "";
+     informacao += "Usuário com chaveiro entrou";
+     abrePorta();
   } else{
-    fechaPorta();  
+    fechaPorta(); 
   }
 }
 
